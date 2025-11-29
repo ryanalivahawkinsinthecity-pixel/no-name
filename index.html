@@ -1,646 +1,83 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Celliverse </title>
-<style>
-  :root{
-    --bg:#05050a;
-    --neon:#00ffd5;
-    --accent:#ff2dff;
-    --muted:#97a0b3;
-    --glass: rgba(255,255,255,0.04);
-  }
-  html,body{height:100%;margin:0;background:linear-gradient(180deg,#02020a 0%, #081026 60%, #05050a 100%); font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; color:#e6f7ff;}
-  .wrap{max-width:1100px;margin:18px auto;padding:18px;border-radius:12px;background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)); box-shadow: 0 6px 32px rgba(0,0,0,0.6); position:relative; overflow:hidden;}
-  header{display:flex;align-items:center;justify-content:space-between;gap:12px}
-  h1{margin:0;font-size:20px;letter-spacing:0.6px;color:var(--neon);text-shadow:0 0 8px rgba(0,255,213,0.12)}
-  .sub{color:var(--muted); font-size:12px}
-  #topbar{display:flex;gap:12px;align-items:center}
-  .controls{display:flex;gap:8px;align-items:center}
-  .btn{background:linear-gradient(90deg,rgba(255,255,255,0.02),rgba(255,255,255,0.03));border:1px solid rgba(255,255,255,0.04); padding:8px 12px;border-radius:8px;color:var(--neon);cursor:pointer;font-weight:600}
-  .btn.secondary{color:var(--accent)}
-  .btn:active{transform:translateY(1px)}
-  #grid{display:grid;grid-template-columns: 1fr 380px;gap:16px;margin-top:16px}
-  /* Left: Canvas area */
-  #sceneWrap{position:relative; min-height:520px; border-radius:10px; overflow:hidden; background: radial-gradient(circle at 30% 30%, rgba(0,255,213,0.03), transparent 6%), radial-gradient(circle at 70% 70%, rgba(255,45,255,0.03), transparent 10%);}
-  canvas#scene{width:100%;height:520px;display:block;background:transparent; image-rendering:optimizeQuality}
-  /* Right: UI panel */
-  #panel{background:linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.006)); border-left:1px solid rgba(255,255,255,0.02); padding:12px; height:520px; overflow:auto}
-  .playerBox{display:flex;flex-direction:column;gap:6px;margin-bottom:10px}
-  label{font-size:12px;color:var(--muted)}
-  input[type=text]{padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:transparent;color:#e6f7ff}
-  .org-list{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
-  .org{background:var(--glass); padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.02);display:flex;flex-direction:column;gap:6px}
-  .org h4{margin:0;font-size:13px;color:#fff}
-  .org p{margin:0;font-size:11px;color:var(--muted)}
-  .adapt-btn{margin-top:6px;padding:6px;border-radius:6px;border:none;background:linear-gradient(90deg,var(--neon),var(--accent));color:#05050a;cursor:pointer;font-weight:700}
-  #adaptationWrap{margin-top:12px}
-  #adaptationBar{height:18px;background:rgba(255,255,255,0.03);border-radius:10px;border:1px solid rgba(255,255,255,0.03);overflow:hidden}
-  #adaptationFill{width:0%;height:100%;background:linear-gradient(90deg,var(--neon),var(--accent));transition:width 700ms cubic-bezier(.2,.9,.2,1)}
-  .meterText{display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin-top:6px}
-  #envInfo{margin-top:10px;font-size:12px;color:var(--muted)}
-  #log{margin-top:12px;border-radius:8px;padding:8px;background:linear-gradient(180deg, rgba(255,255,255,0.01), transparent);min-height:80px; font-size:13px;color:#cfefff}
-  .small{font-size:11px;color:var(--muted)}
-  footer{display:flex;justify-content:space-between;align-items:center;margin-top:12px; gap:10px}
-  .mute{background:transparent;border:1px solid rgba(255,255,255,0.03);padding:8px;border-radius:8px;color:var(--muted)}
-  /* responsive */
-  @media (max-width:900px){ #grid{grid-template-columns:1fr; } canvas#scene{height:420px} #panel{height:auto} }
-  /* Evolution burst */
-  .burst{position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none}
-  .missionBox{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);background:linear-gradient(180deg, rgba(0,0,0,0.8), rgba(6,6,12,0.92)); padding:18px;border-radius:12px;border:1px solid rgba(255,255,255,0.04); box-shadow:0 10px 40px rgba(0,0,0,0.8); color:#dff7ff; display:none; z-index:9999}
-  .missionBox h2{margin:0 0 8px 0;color:var(--accent)}
-  .missionBox p{margin:0;color:var(--muted)}
-</style>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>The Feeding Gap — Prototype</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-<div class="wrap" role="application" aria-label="Celliverse cyberpunk simulation">
   <header>
-    <div id="topbar">
-      <h1>Celliverse — Cyberpunk Microscopy</h1>
-      <div class="sub">Cells — the smallest unit of life — are vast and comparable to the universe. Welcome, Explorer.</div>
-    </div>
-    <div class="controls">
-      <button class="btn" id="resetBtn">Reset</button>
-      <button class="btn secondary" id="helpBtn">Quick Help</button>
-      <button class="btn" id="muteBtn">Mute</button>
-    </div>
+    <h1>The Feeding Gap</h1>
+    <p class="tagline">Where hunger meets the school day — and teachers fill the space in between.</p>
   </header>
 
-  <div id="grid">
-    <!-- Scene -->
-    <div id="sceneWrap">
-      <canvas id="scene" width="900" height="520"></canvas>
-      <svg class="burst" id="burstLayer"></svg>
-      <div class="missionBox" id="missionBox">
-        <h2>Mission Complete</h2>
-        <p id="missionText">Explorer, you achieved cellular evolution.</p>
-        <p class="small" id="missionDetails"></p>
-        <div style="margin-top:10px"><button class="btn" onclick="closeMission()">Close</button></div>
+  <main>
+    <section class="hud">
+      <div class="meter">
+        <label>Budget</label>
+        <div class="bar-wrap"><div id="budgetBar" class="bar"></div></div>
+        <div class="stat" id="budgetText"></div>
+      </div>
+
+      <div class="meter">
+        <label>Teacher Energy</label>
+        <div class="bar-wrap"><div id="energyBar" class="bar"></div></div>
+        <div class="stat" id="energyText"></div>
+      </div>
+
+      <div class="meter">
+        <label>Awareness</label>
+        <div class="bar-wrap"><div id="awarenessBar" class="bar"></div></div>
+        <div class="stat" id="awarenessText"></div>
+      </div>
+    </section>
+
+    <section class="cafeteria">
+      <aside class="controls">
+        <h2>Actions</h2>
+        <button id="serveBtn">Serve Meal (free)</button>
+        <button id="buyMealBtn">Buy Meal (cost: $10)</button>
+        <button id="fundraiseBtn">Start Fundraiser (awareness +)</button>
+        <button id="donateBtn">Request Donation (budget +)</button>
+        <button id="restBtn">Teacher Rest (restore energy)</button>
+
+        <div class="fact" id="factBox">
+          <strong>Fact:</strong>
+          <p id="factText">Teachers often spend money on students' meals — real-world facts appear here.</p>
+          <button id="nextFact">Next Fact</button>
+        </div>
+
+        <div class="goal">
+          <h3>Goal</h3>
+          <p id="goalText">Feed all students each day while keeping teacher energy above 0.</p>
+        </div>
+      </aside>
+
+      <section class="students">
+        <h2>Lunch Line</h2>
+        <div id="studentList" class="student-list"></div>
+      </section>
+    </section>
+
+    <section class="log">
+      <h3>Daily Log</h3>
+      <ul id="logList"></ul>
+    </section>
+
+    <div id="overlay" class="overlay hidden">
+      <div class="overlay-card">
+        <h2 id="overlayTitle"></h2>
+        <p id="overlayText"></p>
+        <button id="overlayClose">Close</button>
       </div>
     </div>
+  </main>
 
-    <!-- UI Panel -->
-    <aside id="panel">
-      <div class="playerBox">
-        <label for="playerName">Enter codename</label>
-        <input id="playerName" type="text" placeholder="Your codename..." />
-        <div class="small">Please enter a codename before adapting organelles.</div>
-      </div>
+  <footer>
+    <small>Prototype — The Feeding Gap. Use this to raise awareness. Expand as needed.</small>
+  </footer>
 
-      <div id="adaptationWrap">
-        <div class="small">Adaptation Progress</div>
-        <div id="adaptationBar"><div id="adaptationFill"></div></div>
-        <div class="meterText"><span id="adaptPct">0%</span><span class="small" id="adaptHint">Complete all organelles to evolve</span></div>
-        <div id="envInfo">Environment: <span id="envState">Stable</span></div>
-      </div>
-
-      <div style="margin-top:10px" class="small">Organelles</div>
-      <div class="org-list" id="orgList">
-        <!-- JS will populate organelles -->
-      </div>
-
-      <div id="log">Mission Log: <br /><span id="logText" class="small">Awaiting codename...</span></div>
-
-      <footer>
-        <div class="small"> Biotech • Celliverse</div>
-        <div>
-          <button class="btn" id="evoBtn">View Evolution</button>
-        </div>
-      </footer>
-    </aside>
-  </div>
-</div>
-
-<script>
-/* --------------------------
-   Single-file Celliverse Game
-   - All visuals run on single canvas
-   - Each organelle has unique 'adapt' effects
-   - WebAudio generates short sound effects (mute toggle)
-   - Adaptation meter + evolution burst
-   -------------------------- */
-
-(() => {
-  // Basic state
-  const organelleDefs = [
-    { id:'nucleus', name:'Nucleus', desc:'Command center: gene regulation & expression', points:12 },
-    { id:'mitochondria', name:'Mitochondria', desc:'Energy reactor: ATP production', points:10 },
-    { id:'ribosomes', name:'Ribosomes', desc:'Protein synthesis: amino acid assembly', points:9 },
-    { id:'er', name:'Endoplasmic Reticulum', desc:'Transport & folding network', points:8 },
-    { id:'golgi', name:'Golgi Apparatus', desc:'Packaging & modification hub', points:8 },
-    { id:'lysosome', name:'Lysosomes', desc:'Degradation & recycling', points:9 },
-    { id:'vacuole', name:'Vacuole', desc:'Storage reservoir (esp. plants)', points:7 },
-    { id:'chloroplast', name:'Chloroplasts', desc:'Photosynthesis machinery (plants)', points:11 },
-    { id:'membrane', name:'Cell Membrane', desc:'Selective barrier & signaling', points:8 },
-    { id:'cytoskeleton', name:'Cytoskeleton', desc:'Structural scaffold & transport', points:8 }
-  ];
-
-  const canvas = document.getElementById('scene');
-  const ctx = canvas.getContext('2d', { alpha:true });
-  const burstLayer = document.getElementById('burstLayer');
-  const panel = document.getElementById('panel');
-  const playerNameInput = document.getElementById('playerName');
-  const logText = document.getElementById('logText');
-  const adaptationFill = document.getElementById('adaptationFill');
-  const adaptPct = document.getElementById('adaptPct');
-  const envState = document.getElementById('envState');
-  const muteBtn = document.getElementById('muteBtn');
-  const resetBtn = document.getElementById('resetBtn');
-  const helpBtn = document.getElementById('helpBtn');
-  const evoBtn = document.getElementById('evoBtn');
-  const missionBox = document.getElementById('missionBox');
-  const missionText = document.getElementById('missionText');
-  const missionDetails = document.getElementById('missionDetails');
-
-  // Audio
-  let audioCtx=null, masterGain=null, muted=false;
-  function initAudio(){
-    if(audioCtx) return;
-    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    masterGain = audioCtx.createGain(); masterGain.gain.value = 0.12; masterGain.connect(audioCtx.destination);
-  }
-  function playTone(freq, time=0.12, type='sine'){
-    if(muted) return;
-    initAudio();
-    const o = audioCtx.createOscillator();
-    const g = audioCtx.createGain();
-    o.type = type; o.frequency.value = freq;
-    o.connect(g); g.connect(masterGain);
-    const now = audioCtx.currentTime;
-    g.gain.setValueAtTime(0.0001, now);
-    g.gain.exponentialRampToValueAtTime(1.0, now + 0.02);
-    o.start(now);
-    g.gain.exponentialRampToValueAtTime(0.0001, now + time);
-    o.stop(now + time + 0.02);
-  }
-
-  muteBtn.addEventListener('click', () => {
-    muted = !muted;
-    if(muted) { muteBtn.textContent='Unmute'; }
-    else { muteBtn.textContent='Mute'; playTone(880,0.06,'square'); }
-  });
-
-  resetBtn.addEventListener('click', ()=>{ resetAll(); playTone(220,0.08,'sawtooth'); });
-  helpBtn.addEventListener('click', ()=>{ alert("Enter your codename, then press ADAPT on each organelle to simulate cellular adaptation. The environment will react. Fill the adaptation bar to trigger evolution."); });
-
-  // Build organelle UI
-  const orgList = document.getElementById('orgList');
-  organelleDefs.forEach(def => {
-    const card = document.createElement('div'); card.className='org'; card.id='card-'+def.id;
-    const h = document.createElement('h4'); h.innerText = def.name;
-    const p = document.createElement('p'); p.innerText = def.desc;
-    const btn = document.createElement('button'); btn.className='adapt-btn'; btn.innerText='ADAPT';
-    btn.onclick = ()=>attemptAdapt(def.id);
-    card.appendChild(h); card.appendChild(p); card.appendChild(btn);
-    orgList.appendChild(card);
-  });
-
-  // Adaptation state
-  let totalPoints = organelleDefs.reduce((s,o)=>s+o.points,0);
-  let gainedPoints = 0;
-  let adapted = {}; // id => true
-  let sceneTime = 0;
-  let env = { type: 'stable', intensity: 0 }; // stable, heat, lowlight, toxin
-  // Scene objects (positions for organs)
-  const organsPos = {
-    nucleus:{x:420,y:260,r:70},
-    mitochondria:{x:640,y:150,r:48},
-    ribosomes:{x:520,y:360,r:30},
-    er:{x:300,y:320,r:60},
-    golgi:{x:720,y:320,r:42},
-    lysosome:{x:240,y:160,r:34},
-    vacuole:{x:120,y:360,r:44},
-    chloroplast:{x:120,y:120,r:50},
-    membrane:{x:420,y:260,r:220}, // big ring
-    cytoskeleton:{x:420,y:260,r:200}
-  };
-
-  // Helpful small utilities
-  function clamp(v,a,b){ return Math.max(a, Math.min(b, v)); }
-  function pct(){ return Math.round((gainedPoints/totalPoints)*100); }
-  function log(msg){ logText.innerHTML = '['+new Date().toLocaleTimeString()+'] '+msg + '<br>' + logText.innerHTML; }
-
-  // Rendering / animation
-  function drawBackground(){
-    // cyberpunk particle field + subtle grid
-    ctx.save();
-    ctx.clearRect(0,0,canvas.width,canvas.height);
-    // glowing vignette
-    const g = ctx.createRadialGradient(300,180,40,420,260,700);
-    g.addColorStop(0,'rgba(0,255,213,0.02)');
-    g.addColorStop(1,'rgba(5,5,10,0.0)');
-    ctx.fillStyle = g;
-    ctx.fillRect(0,0,canvas.width,canvas.height);
-    // subtle moving noise lines
-    ctx.globalAlpha = 0.06;
-    ctx.strokeStyle = '#00ffd5';
-    for(let i=0;i<6;i++){
-      ctx.beginPath();
-      const y = (sceneTime*10 + i*60) % canvas.height;
-      ctx.moveTo(0,y); ctx.lineTo(canvas.width,y+50); ctx.stroke();
-    }
-    ctx.globalAlpha = 1;
-    ctx.restore();
-  }
-
-  // Realistic-ish organelle renderers (stylized)
-  function drawMembrane(){
-    const p = organsPos.membrane;
-    // outer glow
-    ctx.save();
-    ctx.beginPath();
-    ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
-    ctx.fillStyle = 'rgba(10,10,24,0.6)';
-    ctx.fill();
-    // membrane double-layer ring
-    const grd = ctx.createLinearGradient(p.x-p.r,p.y,p.x+p.r,p.y);
-    grd.addColorStop(0,'rgba(0,255,213,0.04)');
-    grd.addColorStop(0.5,'rgba(255,45,255,0.06)');
-    grd.addColorStop(1,'rgba(0,255,213,0.03)');
-    ctx.lineWidth = 8;
-    ctx.strokeStyle = grd;
-    ctx.stroke();
-    // dynamic pores (if toxin env -> widen)
-    ctx.lineWidth = 2;
-    for(let a=0;a<12;a++){
-      const ang = a*(Math.PI*2/12) + sceneTime*0.02;
-      const rx = p.x + Math.cos(ang)*(p.r-6);
-      const ry = p.y + Math.sin(ang)*(p.r-6);
-      ctx.beginPath();
-      ctx.arc(rx,ry, (env.type==='toxin'?4:2), 0, Math.PI*2);
-      ctx.fillStyle = env.type==='toxin' ? 'rgba(255,45,255,0.8)' : 'rgba(0,255,213,0.7)';
-      ctx.fill();
-    }
-    ctx.restore();
-  }
-
-  function drawNucleus(t){
-    const p = organsPos.nucleus;
-    ctx.save();
-    // outer membrane
-    const grad = ctx.createRadialGradient(p.x-10,p.y-10,10,p.x,p.y,p.r+24);
-    grad.addColorStop(0,'rgba(30,32,55,0.7)');
-    grad.addColorStop(1,'rgba(0,0,0,0.6)');
-    ctx.fillStyle = grad; ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,Math.PI*2); ctx.fill();
-
-    // realistic DNA coils (animated strands)
-    ctx.strokeStyle = 'rgba(220,240,255,0.95)';
-    ctx.lineWidth = 2;
-    for(let s=0;s<5;s++){
-      ctx.beginPath();
-      const wob = Math.sin(t*0.8 + s)*8;
-      for(let a=0;a<Math.PI*2;a+=0.12){
-        const r = p.r - 12 - s*6 + Math.sin(a*4 + t*0.5 + s)*wob;
-        const x = p.x + Math.cos(a + s*0.5 + t*0.1)*r;
-        const y = p.y + Math.sin(a + s*0.5 + t*0.1)*r*0.7;
-        if(a===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
-      }
-      ctx.stroke();
-    }
-
-    // nucleus core glow (changes with adaptation)
-    const corePulse = 1 + (adapted['nucleus']?0.75:0.15)*Math.sin(t*2);
-    ctx.beginPath(); ctx.arc(p.x,p.y,18*corePulse,0,Math.PI*2);
-    ctx.fillStyle = adapted['nucleus'] ? 'rgba(255,45,255,0.95)' : 'rgba(0,255,213,0.6)';
-    ctx.fill();
-
-    ctx.restore();
-  }
-
-  function drawMitochondria(t){
-    const p = organsPos.mitochondria;
-    ctx.save();
-    ctx.translate(p.x,p.y);
-    // outer sac shape
-    ctx.beginPath();
-    ctx.ellipse(0,0,p.r, p.r*0.6, Math.sin(t*0.3)*0.2, 0, Math.PI*2);
-    ctx.fillStyle = 'rgba(40,10,20,0.85)'; ctx.fill();
-
-    // inner cristae - realistic folds
-    ctx.strokeStyle = adapted['mitochondria']?'#ffb6ff':'#00ffd5';
-    ctx.lineWidth = 2;
-    for(let i=-2;i<3;i++){
-      ctx.beginPath();
-      for(let a=-Math.PI*0.9;a<Math.PI*0.9;a+=0.12){
-        const rx = Math.cos(a)*(p.r*0.6 + Math.sin(a*4 + t*3 + i)*6) + i*6;
-        const ry = Math.sin(a)*(p.r*0.3 + Math.cos(a*2 + t*2 + i)*4);
-        if(a===-Math.PI*0.9) ctx.moveTo(rx,ry); else ctx.lineTo(rx,ry);
-      }
-      ctx.stroke();
-    }
-
-    // energy core pulses with clicks (if adapted -> brighter)
-    const core = 8 + (adapted['mitochondria']?12:4)*Math.abs(Math.sin(t*5));
-    ctx.beginPath(); ctx.arc(0,0,core,0,Math.PI*2);
-    ctx.fillStyle = adapted['mitochondria'] ? 'rgba(255,210,88,0.95)' : 'rgba(0,255,213,0.6)';
-    ctx.fill();
-    ctx.restore();
-  }
-
-  function drawRibosomes(t){
-    const p = organsPos.ribosomes;
-    ctx.save();
-    for(let i=0;i<18;i++){
-      const ang = i*(Math.PI*2/18) + t*0.4;
-      const r = p.r + Math.sin(t+i)*6;
-      const x = p.x + Math.cos(ang)*r;
-      const y = p.y + Math.sin(ang)*r*0.6;
-      ctx.beginPath();
-      ctx.fillStyle = adapted['ribosomes'] ? 'rgba(255,150,220,0.95)' : 'rgba(200,255,230,0.9)';
-      ctx.arc(x,y,6 + (adapted['ribosomes']?2:0),0,Math.PI*2);
-      ctx.fill();
-    }
-    ctx.restore();
-  }
-
-  function drawER(t){
-    const p = organsPos.er;
-    ctx.save();
-    // concentric circuits like membrane
-    ctx.translate(p.x,p.y);
-    for(let i=0;i<4;i++){
-      ctx.beginPath();
-      ctx.strokeStyle = adapted['er'] ? 'rgba(255,180,120,0.7)' : 'rgba(120,240,255,0.06)';
-      ctx.lineWidth = 6 - i;
-      const offset = i*8;
-      ctx.ellipse(0,0,p.r-offset,p.r*0.5-offset,0,0,Math.PI*2);
-      ctx.stroke();
-    }
-    // moving 'molecule' (simulate conveyor)
-    const mx = -p.r + ((sceneTime*60)% (p.r*2));
-    ctx.fillStyle = adapted['er'] ? '#ffd3b6' : '#00ffd5';
-    ctx.fillRect(mx, -12, 18, 12);
-    ctx.restore();
-  }
-
-  function drawGolgi(t){
-    const p = organsPos.golgi;
-    ctx.save();
-    ctx.translate(p.x,p.y);
-    // stacks
-    for(let i=0;i<5;i++){
-      ctx.fillStyle = adapted['golgi'] ? 'rgba(255,230,180,0.9)' : 'rgba(180,200,255,0.08)';
-      ctx.fillRect(-30 + i*6, -20 + i*6, 80 - i*8, 14);
-    }
-    // floating packages
-    ctx.fillStyle = adapted['golgi'] ? '#ff77d6' : '#00ffd5';
-    ctx.beginPath(); ctx.arc(20 + Math.sin(t*2)*8, -2 + Math.cos(t*1.7)*6, 8,0,Math.PI*2); ctx.fill();
-    ctx.restore();
-  }
-
-  function drawLysosome(t){
-    const p = organsPos.lysosome;
-    ctx.save();
-    ctx.beginPath();
-    ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
-    ctx.fillStyle = adapted['lysosome'] ? 'rgba(255,200,170,0.92)' : 'rgba(180,255,230,0.88)';
-    ctx.fill();
-    // debris particles dissolving
-    for(let i=0;i<6;i++){
-      const ang = i*(Math.PI*2/6) + t*0.6;
-      const r = p.r + Math.sin(t+i)*8;
-      const x = p.x + Math.cos(ang)*r; const y = p.y + Math.sin(ang)*r*0.6;
-      ctx.beginPath(); ctx.fillStyle='rgba(255,255,255,0.2)'; ctx.arc(x,y,3,0,Math.PI*2); ctx.fill();
-    }
-    ctx.restore();
-  }
-
-  function drawVacuole(t){
-    const p = organsPos.vacuole;
-    ctx.save();
-    // big droplet with sheen
-    ctx.beginPath(); ctx.ellipse(p.x,p.y,p.r,p.r*1.1,0,0,Math.PI*2);
-    const g = ctx.createLinearGradient(p.x-p.r,p.y,p.x+p.r,p.y);
-    g.addColorStop(0,'rgba(150,220,255,0.1)'); g.addColorStop(1,'rgba(0,255,213,0.06)');
-    ctx.fillStyle = g; ctx.fill();
-    // stored nutrients as shimmering spheres
-    for(let i=0;i<4;i++){
-      ctx.beginPath(); ctx.fillStyle = adapted['vacuole'] ? 'rgba(255,245,160,0.8)' : 'rgba(0,200,160,0.3)';
-      ctx.arc(p.x - 10 + i*20, p.y + Math.sin(t+i)*6, 6,0,Math.PI*2); ctx.fill();
-    }
-    ctx.restore();
-  }
-
-  function drawChloroplast(t){
-    const p = organsPos.chloroplast;
-    ctx.save();
-    ctx.beginPath();
-    ctx.ellipse(p.x,p.y,p.r,p.r*0.6,0,0,Math.PI*2);
-    const g = ctx.createLinearGradient(p.x-p.r,p.y,p.x+p.r,p.y);
-    g.addColorStop(0,'rgba(30,200,40,0.15)');
-    g.addColorStop(1,'rgba(0,100,30,0.04)');
-    ctx.fillStyle = g; ctx.fill();
-    // internal thylakoid stacks
-    for(let i=0;i<5;i++){
-      ctx.fillStyle = adapted['chloroplast'] ? '#b2ff88' : '#1aff9b';
-      ctx.fillRect(p.x - p.r + 8 + i*14, p.y - 10 + Math.sin(t+i)*2, 30, 6);
-    }
-    // sunlight rays (if adapted -> brighter)
-    if(adapted['chloroplast']){
-      ctx.beginPath(); ctx.strokeStyle='rgba(255,255,120,0.25)'; ctx.lineWidth=2;
-      ctx.moveTo(p.x-40,p.y-80); ctx.quadraticCurveTo(p.x,p.y-40,p.x+20,p.y-70); ctx.stroke();
-    }
-    ctx.restore();
-  }
-
-  function drawCytoskeleton(t){
-    const p = organsPos.cytoskeleton;
-    ctx.save();
-    ctx.strokeStyle = adapted['cytoskeleton'] ? '#ffd1ff' : 'rgba(255,255,255,0.06)';
-    ctx.lineWidth = 1.2;
-    // network of dynamic lines connecting anchor points
-    const anchors = [
-      {x:300 + Math.sin(t*0.7)*10, y:180 + Math.cos(t*0.9)*8},
-      {x:500 + Math.cos(t*0.6)*12, y:140 + Math.sin(t*0.8)*10},
-      {x:360 + Math.cos(t*0.4)*10, y:360 + Math.sin(t*0.5)*8},
-      {x:580 + Math.sin(t*0.5)*8, y:320 + Math.cos(t*0.6)*6},
-      {x:420, y:260}
-    ];
-    for(let i=0;i<anchors.length;i++){
-      for(let j=i+1;j<anchors.length;j++){
-        ctx.beginPath();
-        ctx.moveTo(anchors[i].x, anchors[i].y);
-        ctx.lineTo(anchors[j].x, anchors[j].y);
-        ctx.stroke();
-      }
-    }
-    ctx.restore();
-  }
-
-  // Environment visuals (heat, lowlight, toxin)
-  function drawEnvironment(t){
-    if(env.type === 'stable') return;
-    ctx.save();
-    if(env.type === 'heat'){
-      // heat shimmer: moving orange waves
-      for(let i=0;i<6;i++){
-        ctx.globalAlpha = 0.06 * env.intensity;
-        ctx.fillStyle = 'rgba(255,120,80,' + (0.06*env.intensity) + ')';
-        ctx.beginPath(); ctx.ellipse(420 + Math.sin(t*0.5+i)*140, 260 + Math.cos(t*0.7+i)*40, 280, 80, 0,0,Math.PI*2); ctx.fill();
-      }
-    } else if(env.type === 'lowlight'){
-      ctx.fillStyle = 'rgba(3,6,20,' + (0.18*env.intensity) + ')';
-      ctx.fillRect(0,0,canvas.width,canvas.height);
-    } else if(env.type === 'toxin'){
-      // toxic particles
-      for(let i=0;i<30;i++){
-        const x = Math.abs(Math.sin(i + t*1.2))*canvas.width;
-        const y = (i*37 + t*40) % canvas.height;
-        ctx.fillStyle = 'rgba(255,50,200,' + (0.02*env.intensity) + ')';
-        ctx.fillRect(x%canvas.width, y, 2, 2);
-      }
-    }
-    ctx.restore();
-  }
-
-  // Single frame draw
-  function renderFrame(tRaw){
-    const t = tRaw/1000;
-    sceneTime = t;
-    drawBackground();
-    drawEnvironment(t);
-    // draw membrane first, then organs
-    drawMembrane();
-    drawVacuole(t);
-    drawLysosome(t);
-    drawER(t);
-    drawNucleus(t);
-    drawMitochondria(t);
-    drawRibosomes(t);
-    drawGolgi(t);
-    drawChloroplast(t);
-    drawCytoskeleton(t);
-    // HUD: adaptation aura around cell when high
-    if(pct() >= 70){
-      ctx.beginPath();
-      ctx.arc(organsPos.nucleus.x,organsPos.nucleus.y,organsPos.membrane.r - 10,0,Math.PI*2);
-      ctx.strokeStyle = 'rgba(255,45,255,0.08)';
-      ctx.lineWidth = 20 * ((pct()-70)/30);
-      ctx.stroke();
-    }
-    requestAnimationFrame(renderFrame);
-  }
-  requestAnimationFrame(renderFrame);
-
-  // Adaptation logic & per-organelle effect functions
-  function attemptAdapt(id){
-    if(!playerNameInput.value.trim()){ alert('Enter your codename first.'); return; }
-    if(adapted[id]){ log(`${id} already adapted.`); playTone(300,0.06,'sine'); return; }
-    // adapt action depends on organelle
-    const def = organelleDefs.find(o=>o.id===id);
-    if(!def) return;
-    // play unique sound
-    playTone(220 + Math.random()*400, 0.12, 'sawtooth');
-    // increase points
-    gainedPoints += def.points;
-    adapted[id] = true;
-    // update UI card highlight
-    const card = document.getElementById('card-'+id);
-    if(card) card.style.border = '1px solid rgba(255,255,255,0.08)';
-    // trigger organelle-specific visual effect
-    triggerOrganelleEffect(id);
-    updateAdaptUI();
-    log(`${playerNameInput.value} adapted ${def.name}. +${def.points} points.`);
-    if(pct() >= 100){
-      evolveSequence();
-    }
-  }
-
-  function updateAdaptUI(){
-    const w = clamp((gainedPoints/totalPoints)*100, 0, 100);
-    adaptationFill.style.width = w + '%';
-    adaptPct.textContent = Math.round(w) + '%';
-  }
-
-  // Organelle-specific effects: change env and produce burst particles
-  function triggerOrganelleEffect(id){
-    // quick local particle burst on burstLayer
-    burstSVGBurst((organsPos[id]||{x:420,y:260}).x, (organsPos[id]||{x:420,y:260}).y, adapted[id]?12:8);
-    // modify environment interactively
-    if(id === 'mitochondria'){ env.type='stable'; env.intensity=0; playTone(880,0.08,'triangle'); } // stabilizing
-    else if(id === 'chloroplast'){ env.type='lowlight'; env.intensity = 0.6; setTimeout(()=>{ env.type='stable'; env.intensity=0 },3200); playTone(660,0.12,'sine'); }
-    else if(id === 'lysosome'){ env.type='toxin'; env.intensity = 0.9; setTimeout(()=>{ env.type='stable'; env.intensity=0 },2200); playTone(440,0.12,'square'); }
-    else if(id === 'membrane'){ env.type='toxin'; env.intensity = 0.5; setTimeout(()=>{ env.type='stable'; env.intensity=0 },2600); playTone(520,0.08,'sine'); }
-    else if(id === 'vacuole'){ env.type='stable'; env.intensity = 0; playTone(300,0.14,'triangle'); }
-    else { playTone(480,0.06,'sine'); }
-    // Visually mark adapted organelle icon
-    const card = document.getElementById('card-'+id);
-    if(card) card.style.boxShadow = 'inset 0 0 14px rgba(255,255,255,0.02), 0 4px 18px rgba(0,255,213,0.04)';
-  }
-
-  // SVG particle burst (small, lightweight)
-  function burstSVGBurst(x,y,count){
-    const svg = burstLayer;
-    const ns = 'http://www.w3.org/2000/svg';
-    for(let i=0;i<count;i++){
-      const c = document.createElementNS(ns,'circle');
-      const r = 2 + Math.random()*4;
-      c.setAttribute('cx', x ); c.setAttribute('cy', y );
-      c.setAttribute('r', r );
-      c.setAttribute('fill', (Math.random()>0.5? '#00ffd5':'#ff2dff'));
-      c.style.opacity = '0.95';
-      svg.appendChild(c);
-      // animate via JS (fade & move)
-      const dx = (Math.random()-0.5)*200; const dy = (Math.random()-0.5)*160; const dur = 700 + Math.random()*500;
-      const start = performance.now();
-      (function animateCircle(circle, sx, sy, dx, dy, dur, start){
-        function step(now){
-          const p = clamp((now-start)/dur,0,1);
-          const cx = sx + dx * easeOutCubic(p);
-          const cy = sy + dy * easeOutCubic(p);
-          circle.setAttribute('cx', cx); circle.setAttribute('cy', cy);
-          circle.style.opacity = String(1-p);
-          circle.setAttribute('r', String(parseFloat(circle.getAttribute('r'))*(1 + p*0.6)));
-          if(p < 1) requestAnimationFrame(step); else circle.remove();
-        }
-        requestAnimationFrame(step);
-      })(c, x, y, dx, dy, dur, start);
-    }
-  }
-  function easeOutCubic(t){ return (--t)*t*t+1; }
-
-  // Evolution sequence when adaptation full
-  function evolveSequence(){
-    playTone(1200,0.4,'sine');
-    // big burst and mission box show
-    burstSVGBurst(canvas.width/2, canvas.height/2, 120);
-    setTimeout(()=> {
-      missionText.innerText = `Mission Complete — Evolution Achieved`;
-      missionDetails.innerText = `Explorer: ${playerNameInput.value || 'Anonymous'} — Adaptation ${Math.round((gainedPoints/totalPoints)*100)}% — Organelles adapted: ${Object.keys(adapted).length}`;
-      missionBox.style.display = 'block';
-      playTone(440,0.2,'sawtooth');
-    }, 600);
-  }
-
-  window.closeMission = function(){ missionBox.style.display='none'; }
-
-  function resetAll(){
-    gainedPoints = 0; adapted = {}; updateAdaptUI();
-    // reset UI cards
-    organelleDefs.forEach(d => {
-      const card = document.getElementById('card-'+d.id);
-      if(card){ card.style.boxShadow=''; card.style.border='1px solid rgba(255,255,255,0.02)'; }
-    });
-    log('System reset.');
-  }
-
-  evoBtn.addEventListener('click', ()=> {
-    // show a quick evolution overview (light)
-    alert('Evolution Tracker:\\n• Completed: ' + Object.keys(adapted).length + '/' + organelleDefs.length + '\\n• Adaptation: ' + Math.round((gainedPoints/totalPoints)*100) + '%');
-  });
-
-  // small start hint
-  logText.innerHTML = 'Please enter your codename, then press ADAPT on organelles to simulate evolution.<br>' + logText.innerHTML;
-
-  // expose reset for external
-  window.resetCelliverse = resetAll;
-
-  // initial draw call ensures body size correct
-  canvas.width = canvas.clientWidth;
-  canvas.height = canvas.clientHeight || 520;
-})();
-</script>
+  <script src="script.js"></script>
 </body>
 </html>
